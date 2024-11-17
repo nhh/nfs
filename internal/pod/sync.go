@@ -3,7 +3,6 @@ package pod
 import (
 	"fmt"
 	"nfs/internal/config/v1"
-	"path/filepath"
 	"slices"
 	"sync"
 	"time"
@@ -62,22 +61,7 @@ func (syncer *syncerImpl) watch() {
 		slices.Sort(syncer.files)
 		slices.Compact(syncer.files)
 
-		for _, watchConfig := range syncer.cnf.WatchConfig {
-			for _, file := range syncer.files {
-				isMatching, err := filepath.Match(watchConfig.Pattern, filepath.Base(file))
-
-				if err != nil {
-					fmt.Printf("error matching files %s %s\n", watchConfig.Pattern, filepath.Base(file))
-					continue
-				}
-
-				if !isMatching {
-					continue
-				}
-
-				fmt.Printf("Syncing %s\n", file)
-			}
-		}
+		fmt.Printf("Syncing %s\n", syncer.files)
 
 		// Resetting files to be empty
 		syncer.files = syncer.files[:0]

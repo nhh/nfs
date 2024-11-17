@@ -8,6 +8,6 @@ pod:
   cwd: "/app"
 
 watch:
-  - pattern: "*.{js,css,img,html}"
-  - pattern: "**/*.php"
+  - pattern: "./[^node_modules]/**/*.{js,css,img,html,vue,ts}"
+  - pattern: "./**/*.php"
   - pattern: "*.go"

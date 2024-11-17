@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+var GLOBAL_EXCLUDE = []string{"node_modules", ".git", ".nuxt", "test"}
+
 type NfsWatchConfig struct {
 	Pattern string
 	Hooks   []string
