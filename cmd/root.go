@@ -29,9 +29,6 @@ var rootCmd = &cobra.Command{
 		}
 		defer watcher.Close()
 
-		// Add a path.
-		err = watcher.Add("/home/niklas-hanft/Projects/nfs/")
-
 		if err != nil {
 			log.Fatal(err)
 		}

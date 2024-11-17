@@ -3,7 +3,9 @@ package pod
 import (
 	"fmt"
 	"nfs/internal/config/v1"
+	"os/exec"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 )
@@ -61,7 +63,33 @@ func (syncer *syncerImpl) sync() {
 		slices.Sort(syncer.files)
 		slices.Compact(syncer.files)
 
-		fmt.Printf("Syncing %s\n", syncer.files)
+		syncer.files = slices.DeleteFunc(syncer.files, func(i string) bool { return i == "" || strings.HasSuffix(i, "~") })
+
+		start := time.Now()
+
+		response, err := exec.Command("/bin/bash", "-c", fmt.Sprintf("kubectl get pod -n %s -l %s -o name --field-selector 'status.phase==Running'", syncer.cnf.PodConfig.Namespace, syncer.cnf.PodConfig.Selector)).Output()
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		pods := strings.Split(strings.Trim(string(response), "\n"), " ")
+		pods = slices.DeleteFunc(pods, func(i string) bool { return i == "" || strings.HasSuffix(i, "~") })
+
+		for _, pod := range pods {
+
+			cmd := fmt.Sprintf("tar cf - %s | kubectl exec -i -n fe-nihanft %s -- tar xf - -C %s", strings.Join(syncer.files, " "), pod, syncer.cnf.PodConfig.Cwd)
+
+			_, err = exec.Command("/bin/bash", "-c", cmd).Output()
+
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			duration := time.Since(start)
+
+			fmt.Printf("Synced %s to %s in %v\n", syncer.files, pod, duration)
+		}
 
 		// Resetting files to be empty
 		syncer.files = syncer.files[:0]

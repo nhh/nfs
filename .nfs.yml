@@ -5,9 +5,10 @@ interval: 1000
 
 # Pod specific configuration
 pod:
-  cwd: "/app"
+  namespace: "fe-nihanft"
+  selector: "app.kubernetes.io/name=frontend"
+  cwd: "/home/frontend/"
 
 watch:
-  - pattern: "./[^node_modules]/**/*.{js,css,img,html,vue,ts}"
   - pattern: "./**/*.php"
   - pattern: "*.go"

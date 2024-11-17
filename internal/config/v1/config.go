@@ -13,7 +13,9 @@ type NfsWatchConfig struct {
 }
 
 type NfsPodConfig struct {
-	Cwd string `yaml:"cwd"`
+	Cwd       string `yaml:"cwd"`
+	Selector  string `yaml:"selector"`
+	Namespace string `yaml:"namespace"`
 }
 
 type NfsConfig struct {
