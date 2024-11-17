@@ -1,0 +1,13 @@
+manifest: "v1"
+
+# Events are grouped every <interval> for deduplication purposes
+interval: 1000
+
+# Pod specific configuration
+pod:
+  cwd: "/app"
+
+watch:
+  - pattern: "*.{js,css,img,html}"
+  - pattern: "**/*.php"
+  - pattern: "*.go"
