@@ -9,37 +9,61 @@ import (
 	"time"
 )
 
-func Add(file string) {
-	mtx.Lock()
-	files = append(files, file)
-	mtx.Unlock()
+type Syncer interface {
+	IsRunning() bool
+	Add(file string)
+	StartWatching()
 }
 
-var mtx sync.Mutex
-var files []string
-var cnf = v1.Parse()
-
-func init() {
-	go syncWithPod()
+type syncerImpl struct {
+	isRunning bool
+	mtx       sync.Mutex
+	files     []string
+	cnf       v1.NfsConfig
 }
 
-func syncWithPod() {
+func NewSyncer(cnf v1.NfsConfig) Syncer {
+	syncer := syncerImpl{files: make([]string, 0), cnf: cnf, isRunning: false}
+
+	return &syncer
+}
+
+func (syncer *syncerImpl) IsRunning() bool {
+	return syncer.isRunning
+}
+
+func (syncer *syncerImpl) Add(file string) {
+	syncer.mtx.Lock()
+	syncer.files = append(syncer.files, file)
+	syncer.mtx.Unlock()
+}
+
+func (syncer *syncerImpl) StartWatching() {
+	if syncer.isRunning {
+		return
+	}
+	syncer.isRunning = true
+	go syncer.watch()
+}
+
+// Todo maybe move loop and concurrency settings out of func
+func (syncer *syncerImpl) watch() {
 	for {
-		time.Sleep(time.Duration(cnf.Interval) * time.Millisecond)
+		time.Sleep(time.Duration(syncer.cnf.Interval) * time.Millisecond)
 
 		// Do nothing
-		if len(files) == 0 {
+		if len(syncer.files) == 0 {
 			continue
 		}
 
-		mtx.Lock()
+		syncer.mtx.Lock()
 
 		// Deduplicate
-		slices.Sort(files)
-		slices.Compact(files)
+		slices.Sort(syncer.files)
+		slices.Compact(syncer.files)
 
-		for _, watchConfig := range cnf.WatchConfig {
-			for _, file := range files {
+		for _, watchConfig := range syncer.cnf.WatchConfig {
+			for _, file := range syncer.files {
 				isMatching, err := filepath.Match(watchConfig.Pattern, filepath.Base(file))
 
 				if err != nil {
@@ -56,8 +80,8 @@ func syncWithPod() {
 		}
 
 		// Resetting files to be empty
-		files = files[:0]
+		syncer.files = syncer.files[:0]
 
-		mtx.Unlock()
+		syncer.mtx.Unlock()
 	}
 }

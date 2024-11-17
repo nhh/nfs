@@ -14,7 +14,7 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		_ = cmd.Help()
-		_ = v1.Parse()
+		config := v1.Parse()
 
 		// Create new watcher.
 		watcher, err := fsnotify.NewWatcher()
@@ -24,11 +24,14 @@ var rootCmd = &cobra.Command{
 		defer watcher.Close()
 
 		// Add a path.
-		err = watcher.Add(".")
+		err = watcher.Add("/home/niklas-hanft/Projects/nfs/")
 
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		syncer := pod.NewSyncer(config)
+		syncer.StartWatching()
 
 		for {
 			select {
@@ -37,7 +40,7 @@ var rootCmd = &cobra.Command{
 					return
 				}
 				if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
-					pod.Add(event.Name)
+					syncer.Add(event.Name)
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
