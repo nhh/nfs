@@ -11,7 +11,7 @@ import (
 type Syncer interface {
 	IsRunning() bool
 	Add(file string)
-	StartWatching()
+	StartSyncing()
 }
 
 type syncerImpl struct {
@@ -37,16 +37,16 @@ func (syncer *syncerImpl) Add(file string) {
 	syncer.mtx.Unlock()
 }
 
-func (syncer *syncerImpl) StartWatching() {
+func (syncer *syncerImpl) StartSyncing() {
 	if syncer.isRunning {
 		return
 	}
 	syncer.isRunning = true
-	go syncer.watch()
+	go syncer.sync()
 }
 
 // Todo maybe move loop and concurrency settings out of func
-func (syncer *syncerImpl) watch() {
+func (syncer *syncerImpl) sync() {
 	for {
 		time.Sleep(time.Duration(syncer.cnf.Interval) * time.Millisecond)
 

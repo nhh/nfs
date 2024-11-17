@@ -37,7 +37,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		syncer := pod.NewSyncer(config)
-		syncer.StartWatching()
+		syncer.StartSyncing()
 
 		filesToWatch := make([]string, 0)
 
