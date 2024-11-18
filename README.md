@@ -31,23 +31,10 @@ tar cf - website/**/*.vue -P | cat
 
 # outputs:
 
-website/pages/support/faq/index.vue0000664000175000017500000000073414677171254021476 0ustar  niklas-hanftniklas-hanft<script lang="ts">
+123/a/c/faq/index.vue0000664000175000017500000000073414677171254021476 0ustar  niklas-hanftniklas-hanft<script lang="ts">
   import Vue from "vue"
-  import { allowedCategories } from "@marbis/common/config/faq"
+  import { allowedCategories } from ""/faq"
 
-  export default Vue.extend({
-    layout: "empty",
-    nuxtI18n: {
-      paths: {
-        "es-ES": "/soporte/faq",
-        "it-IT": "/supporto/faq",
-        "nl-NL": "/ondersteuning/faq",
-        "pl-PL": "/wsparcie/faq/"
-      }
-    },
-    created(): void {
-      this.$router.push(this.localePath(`${this.$route.path}/${allowedCategories[0]}`))
-    }
   })
 </script>
 

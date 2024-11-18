@@ -43,7 +43,7 @@ var rootCmd = &cobra.Command{
 		for _, watchConfig := range config.WatchConfig {
 
 			err = doublestar.GlobWalk(fsys, watchConfig.Pattern, func(path string, d fs.DirEntry) error {
-				for _, exclude := range v1.GLOBAL_EXCLUDE {
+				for _, exclude := range v1.GlobalExclude {
 					if strings.Contains(path, exclude) {
 						return doublestar.SkipDir
 					}
