@@ -43,7 +43,7 @@ var rootCmd = &cobra.Command{
 		for _, watchConfig := range config.WatchConfig {
 
 			err = doublestar.GlobWalk(fsys, watchConfig.Pattern, func(path string, d fs.DirEntry) error {
-				for _, exclude := range v1.GlobalExclude {
+				for _, exclude := range watchConfig.Excludes {
 					if strings.Contains(path, exclude) {
 						return doublestar.SkipDir
 					}
@@ -63,10 +63,6 @@ var rootCmd = &cobra.Command{
 
 		slices.Sort(filesToWatch)
 		slices.Compact(filesToWatch)
-
-		if len(filesToWatch) >= 10000 {
-			panic("Watching too many files")
-		}
 
 		fmt.Printf("Setup watchers for %d files.\n", len(filesToWatch))
 

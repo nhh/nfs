@@ -8,8 +8,9 @@ import (
 var GlobalExclude = []string{"node_modules", ".git", ".nuxt", "test"}
 
 type NfsWatchConfig struct {
-	Pattern string
-	Hooks   []string
+	Pattern  string
+	Hooks    []string
+	Excludes []string
 }
 
 type NfsPodConfig struct {

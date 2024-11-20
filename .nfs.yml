@@ -11,6 +11,8 @@ pod:
 
 watch:
   - pattern: "./**/*.php"
+    excludes:
+      - "node_modules"
     hooks:
       - "yarn run build"
   - pattern: "*.go"
