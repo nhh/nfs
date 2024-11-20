@@ -23,7 +23,7 @@ var rootCmd = &cobra.Command{
 		config := v1.Parse()
 
 		// Create new watcher.
-		watcher, err := fsnotify.NewWatcher()
+		watcher, err := fsnotify.NewBufferedWatcher(1024)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -76,6 +76,12 @@ var rootCmd = &cobra.Command{
 				fmt.Println(err)
 				continue
 			}
+		}
+
+		fmt.Printf("Syncing initially...\n")
+
+		for _, fileToWatch := range filesToWatch {
+			syncer.Add(fileToWatch)
 		}
 
 		fmt.Printf("Listening for changes...\n")

@@ -11,4 +11,6 @@ pod:
 
 watch:
   - pattern: "./**/*.php"
+    hooks:
+      - "yarn run build"
   - pattern: "*.go"
