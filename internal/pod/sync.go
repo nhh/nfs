@@ -2,7 +2,7 @@ package pod
 
 import (
 	"fmt"
-	"nfs/internal/config/v1"
+	"nfs/internal/config"
 	"os"
 	"os/exec"
 	"slices"
@@ -21,10 +21,10 @@ type syncerImpl struct {
 	isRunning bool
 	mtx       sync.Mutex
 	files     []string
-	cnf       v1.NfsConfig
+	cnf       config.NfsConfig
 }
 
-func NewSyncer(cnf v1.NfsConfig) Syncer {
+func NewSyncer(cnf config.NfsConfig) Syncer {
 	syncer := syncerImpl{files: make([]string, 0), cnf: cnf, isRunning: false}
 
 	return &syncer

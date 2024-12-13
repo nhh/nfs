@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"io/fs"
 	"log"
-	"nfs/internal/config/v1"
+	"nfs/internal/config"
 	"nfs/internal/pod"
 	"os"
 	"slices"
@@ -20,7 +20,7 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		_ = cmd.Help()
-		config := v1.Parse()
+		config := config.Parse()
 
 		// Create new watcher.
 		watcher, err := fsnotify.NewBufferedWatcher(1024)
