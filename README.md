@@ -1,7 +1,5 @@
-# Need for Sync
+# <img src="./assets/images/need-for-sync.png" style="width:40px;padding-right:10px;margin-bottom:-8px;"> Need for Sync
 ### Sync files to pods
-
-![nfs logo](assets/images/need-for-sync.png "") {width=150px}
 
 ## Usage:
 
