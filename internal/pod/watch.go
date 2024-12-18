@@ -30,33 +30,27 @@ func (syncer *syncerImpl) setupWatcher() {
 
 	fsys := os.DirFS(".")
 
-	for _, watchConfig := range syncer.cnf.WatchConfig {
-
-		err = doublestar.GlobWalk(fsys, watchConfig.Pattern, func(path string, d fs.DirEntry) error {
-			for _, exclude := range watchConfig.Excludes {
-				if strings.Contains(path, exclude) {
-					return doublestar.SkipDir
-				}
+	err = doublestar.GlobWalk(fsys, syncer.watchCnf.Pattern, func(path string, d fs.DirEntry) error {
+		for _, exclude := range syncer.watchCnf.Excludes {
+			if strings.Contains(path, exclude) {
+				return doublestar.SkipDir
 			}
-
-			// Verarbeiten
-			filesToWatch = append(filesToWatch, path)
-
-			return nil
-		})
-
-		if err != nil {
-			fmt.Println(err)
-			continue
 		}
+
+		// Verarbeiten
+		filesToWatch = append(filesToWatch, path)
+
+		return nil
+	})
+
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	slices.Sort(filesToWatch)
 	slices.Compact(filesToWatch)
 
-	fmt.Println()
-
-	fmt.Printf("Watching %d files\n", len(filesToWatch))
+	fmt.Printf("<%s> Watching %d files\n", syncer.watchCnf.Pattern, len(filesToWatch))
 
 	for _, path := range filesToWatch {
 		err := watcher.Add(path)

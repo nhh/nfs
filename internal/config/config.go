@@ -22,7 +22,7 @@ type NfsConfig struct {
 	PodConfig   NfsPodConfig     `yaml:"pod"`
 	WatchConfig []NfsWatchConfig `yaml:"watch"`
 	Paralell    bool             `yaml:"paralell"`
-	Interval    uint32           `yaml:"interval"`
+	Interval    int              `yaml:"interval"`
 }
 
 func Parse() NfsConfig {

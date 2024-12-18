@@ -3,6 +3,7 @@ package pod
 import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
+	"math/rand"
 	"nfs/internal/config"
 	"os"
 	"os/exec"
@@ -12,21 +13,39 @@ import (
 	"time"
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 type Syncer interface {
 	IsRunning() bool
 	StartSyncing()
 }
 
 type syncerImpl struct {
+	id        string
 	isRunning bool
 	mtx       sync.Mutex
 	files     []string
-	cnf       config.NfsConfig
+	watchCnf  config.NfsWatchConfig
+	podCnf    config.NfsPodConfig
+	interval  time.Duration
 	watcher   *fsnotify.Watcher
 }
 
-func NewSyncer(cnf config.NfsConfig) Syncer {
-	syncer := syncerImpl{files: make([]string, 0), cnf: cnf, isRunning: false}
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func generateId() string {
+	b := make([]rune, 8)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
+func NewSyncer(cnf config.NfsWatchConfig, podConfig config.NfsPodConfig, interval time.Duration) Syncer {
+	syncer := syncerImpl{id: generateId(), watchCnf: cnf, isRunning: false, interval: 5 * time.Second, podCnf: podConfig}
+	syncer.interval = interval
 
 	return &syncer
 }
@@ -49,13 +68,13 @@ func (syncer *syncerImpl) StartSyncing() {
 	go syncer.sync()
 	syncer.isRunning = true
 
-	syncer.setupWatcher()
+	go syncer.setupWatcher()
 }
 
 // Todo maybe move loop and concurrency settings out of func
 func (syncer *syncerImpl) sync() {
 	for {
-		time.Sleep(time.Duration(syncer.cnf.Interval) * time.Millisecond)
+		time.Sleep(syncer.interval)
 
 		// Do nothing
 		if len(syncer.files) == 0 {
@@ -70,7 +89,7 @@ func (syncer *syncerImpl) sync() {
 
 		syncer.files = slices.DeleteFunc(syncer.files, func(i string) bool { return i == "" || strings.HasSuffix(i, "~") })
 
-		response, err := exec.Command("/bin/bash", "-c", fmt.Sprintf("kubectl get pod -n %s -l %s -o name --field-selector 'status.phase==Running'", syncer.cnf.PodConfig.Namespace, syncer.cnf.PodConfig.Selector)).Output()
+		response, err := exec.Command("/bin/bash", "-c", fmt.Sprintf("kubectl get pod -n %s -l %s -o name --field-selector 'status.phase==Running'", syncer.podCnf.Namespace, syncer.podCnf.Selector)).Output()
 
 		if err != nil {
 			fmt.Println(err)
@@ -83,7 +102,7 @@ func (syncer *syncerImpl) sync() {
 
 			start := time.Now()
 
-			fmt.Printf("%s: Syncing %d files to %s...", start.Format("2006-01-02 15:04:05"), len(syncer.files), pod)
+			fmt.Printf("<%s> %s: Syncing %d files to %s...", syncer.watchCnf.Pattern, start.Format("2006-01-02 15:04:05"), len(syncer.files), pod)
 
 			tmpFile, err := os.CreateTemp("", "kubectl-sync-list")
 
@@ -94,7 +113,7 @@ func (syncer *syncerImpl) sync() {
 				fmt.Printf(" error %v (❌) \n", err)
 			}
 
-			cmd := fmt.Sprintf("tar cf - -T %s | kubectl exec -i -n fe-nihanft %s -- tar xf - -C %s", tmpFile.Name(), pod, syncer.cnf.PodConfig.Cwd)
+			cmd := fmt.Sprintf("tar cf - -T %s | kubectl exec -i -n fe-nihanft %s -- tar xf - -C %s", tmpFile.Name(), pod, syncer.podCnf.Cwd)
 
 			_, err = exec.Command("/bin/bash", "-c", cmd).Output()
 
