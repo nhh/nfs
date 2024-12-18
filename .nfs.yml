@@ -1,14 +1,11 @@
 manifest: "v1"
-
 # Events are grouped every <interval> for deduplication purposes
 interval: 1000
-
 # Pod specific configuration
 pod:
   namespace: "fe-nihanft"
   selector: "app.kubernetes.io/name=frontend"
   cwd: "/home/frontend/"
-
 watch:
   - pattern: "./**/*.php"
     excludes:
