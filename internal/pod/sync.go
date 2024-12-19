@@ -3,7 +3,6 @@ package pod
 import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
-	"math/rand"
 	"nfs/internal/config"
 	"nfs/internal/helper"
 	"os"
@@ -14,12 +13,12 @@ import (
 	"time"
 )
 
-type Syncer interface {
+type ISyncer interface {
 	IsRunning() bool
 	StartSyncing()
 }
 
-type syncerImpl struct {
+type syncer struct {
 	id        string
 	isRunning bool
 	mtx       sync.Mutex
@@ -30,23 +29,21 @@ type syncerImpl struct {
 	watcher   *fsnotify.Watcher
 }
 
-func NewSyncer(cnf config.NfsWatchConfig, podConfig config.NfsPodConfig, interval time.Duration) Syncer {
-	syncer := syncerImpl{id: helper.GenerateId(), watchCnf: cnf, isRunning: false, interval: interval, podCnf: podConfig}
-
-	return &syncer
+func NewSyncer(cnf config.NfsWatchConfig, podConfig config.NfsPodConfig, interval time.Duration) ISyncer {
+	return &syncer{id: helper.GenerateId(), watchCnf: cnf, isRunning: false, interval: interval, podCnf: podConfig}
 }
 
-func (syncer *syncerImpl) IsRunning() bool {
+func (syncer *syncer) IsRunning() bool {
 	return syncer.isRunning
 }
 
-func (syncer *syncerImpl) add(file string) {
+func (syncer *syncer) add(file string) {
 	syncer.mtx.Lock()
 	syncer.files = append(syncer.files, file)
 	syncer.mtx.Unlock()
 }
 
-func (syncer *syncerImpl) StartSyncing() {
+func (syncer *syncer) StartSyncing() {
 	if syncer.isRunning {
 		return
 	}
@@ -56,7 +53,7 @@ func (syncer *syncerImpl) StartSyncing() {
 }
 
 // Todo maybe move loop and concurrency settings out of func
-func (syncer *syncerImpl) sync() {
+func (syncer *syncer) sync() {
 	for {
 		time.Sleep(syncer.interval)
 

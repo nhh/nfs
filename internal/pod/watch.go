@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (syncer *syncerImpl) setupWatcher() {
+func (syncer *syncer) setupWatcher() {
 	// Create new watcher.
 	watcher, err := fsnotify.NewBufferedWatcher(1024)
 
