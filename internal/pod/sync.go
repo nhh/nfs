@@ -5,6 +5,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"math/rand"
 	"nfs/internal/config"
+	"nfs/internal/helper"
 	"os"
 	"os/exec"
 	"slices"
@@ -12,10 +13,6 @@ import (
 	"sync"
 	"time"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 type Syncer interface {
 	IsRunning() bool
@@ -33,18 +30,8 @@ type syncerImpl struct {
 	watcher   *fsnotify.Watcher
 }
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func generateId() string {
-	b := make([]rune, 8)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
-}
-
 func NewSyncer(cnf config.NfsWatchConfig, podConfig config.NfsPodConfig, interval time.Duration) Syncer {
-	syncer := syncerImpl{id: generateId(), watchCnf: cnf, isRunning: false, interval: interval, podCnf: podConfig}
+	syncer := syncerImpl{id: helper.GenerateId(), watchCnf: cnf, isRunning: false, interval: interval, podCnf: podConfig}
 
 	return &syncer
 }
