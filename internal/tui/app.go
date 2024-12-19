@@ -5,21 +5,53 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"time"
 )
 
+var (
+	app            *tview.Application
+	leftSidebar    *tview.Flex
+	rightSidebar   *tview.Flex
+	podList        *tview.TextView
+	logList        *tview.TextView
+	commandView    *tview.TextView
+	globalSettings *tview.TextView
+	syncerView     *tview.TreeView
+)
+
+func updateTitle() {
+	i := 0
+	for {
+		time.Sleep(1 * time.Second)
+		if app == nil {
+			continue
+		}
+
+		app.QueueUpdateDraw(func() {
+			syncerView.SetTitle(fmt.Sprintf("Pod Syncer: %d", i))
+		})
+		i++
+	}
+}
+
 func DisplayApp() {
-	app := tview.NewApplication()
+	app = tview.NewApplication()
+
+	go updateTitle()
 
 	columns := tview.NewFlex().SetDirection(tview.FlexRow)
 
-	leftSidebar := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(scrollableGlobalSettingsView(), 0, 1, true).
-		AddItem(scrollableSyncerView(), 0, 1, false)
+	globalSettings = scrollableGlobalSettingsView()
+	syncerView = scrollableSyncerView()
 
-	podList := scrollableTextView()
-	logList := scrollableLogView()
+	leftSidebar = tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(globalSettings, 0, 1, true).
+		AddItem(syncerView, 0, 1, false)
 
-	rightSidebar := tview.NewFlex().SetDirection(tview.FlexRow).
+	podList = scrollableTextView()
+	logList = scrollableLogView()
+
+	rightSidebar = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(podList, 3, 1, false).
 		AddItem(logList, 0, 1, false)
 
@@ -27,9 +59,11 @@ func DisplayApp() {
 		AddItem(leftSidebar, 0, 3, false).
 		AddItem(rightSidebar, 0, 5, false)
 
+	commandView = scrollableCommandView()
+
 	columns.
 		AddItem(flex, 0, 1, false).
-		AddItem(scrollableCommandView(), 3, 1, false)
+		AddItem(commandView, 3, 1, false)
 
 	// Key-Handler: Tab zum Wechseln
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -126,7 +160,7 @@ func scrollableSyncerView() *tview.TreeView {
 
 	// Erstelle ein TreeView mit der Wurzel
 	treeView := tview.NewTreeView().
-		SetRoot(root).       // Setze den Root-Node
+		SetRoot(root). // Setze den Root-Node
 		SetCurrentNode(root) // Standardmäßig fokussierter Knoten
 
 	// Layout mit einer Border
