@@ -64,6 +64,8 @@ func (syncer *syncerImpl) setupWatcher() {
 		syncer.add(path)
 	}
 
+	syncer.isRunning = true
+
 	for {
 		select {
 		case event, ok := <-watcher.Events:

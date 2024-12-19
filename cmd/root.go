@@ -22,7 +22,7 @@ var rootCmd = &cobra.Command{
 		fmt.Println()
 
 		for _, cnf := range config.WatchConfig {
-			syncer := pod.NewSyncer(cnf, config.PodConfig, time.Duration(config.Interval)*time.Second)
+			syncer := pod.NewSyncer(cnf, config.PodConfig, time.Duration(config.Interval)*time.Millisecond)
 			syncer.StartSyncing()
 			wg.Add(1)
 		}

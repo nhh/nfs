@@ -44,8 +44,7 @@ func generateId() string {
 }
 
 func NewSyncer(cnf config.NfsWatchConfig, podConfig config.NfsPodConfig, interval time.Duration) Syncer {
-	syncer := syncerImpl{id: generateId(), watchCnf: cnf, isRunning: false, interval: 5 * time.Second, podCnf: podConfig}
-	syncer.interval = interval
+	syncer := syncerImpl{id: generateId(), watchCnf: cnf, isRunning: false, interval: interval, podCnf: podConfig}
 
 	return &syncer
 }
@@ -66,8 +65,6 @@ func (syncer *syncerImpl) StartSyncing() {
 	}
 
 	go syncer.sync()
-	syncer.isRunning = true
-
 	go syncer.setupWatcher()
 }
 
@@ -75,6 +72,10 @@ func (syncer *syncerImpl) StartSyncing() {
 func (syncer *syncerImpl) sync() {
 	for {
 		time.Sleep(syncer.interval)
+
+		if !syncer.isRunning {
+			continue
+		}
 
 		// Do nothing
 		if len(syncer.files) == 0 {
@@ -89,10 +90,13 @@ func (syncer *syncerImpl) sync() {
 
 		syncer.files = slices.DeleteFunc(syncer.files, func(i string) bool { return i == "" || strings.HasSuffix(i, "~") })
 
-		response, err := exec.Command("/bin/bash", "-c", fmt.Sprintf("kubectl get pod -n %s -l %s -o name --field-selector 'status.phase==Running'", syncer.podCnf.Namespace, syncer.podCnf.Selector)).Output()
+		selectCommand := fmt.Sprintf("kubectl get pod -n %s -l %s -o name --field-selector 'status.phase==Running'", syncer.podCnf.Namespace, syncer.podCnf.Selector)
+
+		response, err := exec.Command("/bin/bash", "-c", selectCommand).Output()
 
 		if err != nil {
 			fmt.Println(err)
+			continue
 		}
 
 		pods := strings.Split(strings.Trim(string(response), "\n"), " ")
