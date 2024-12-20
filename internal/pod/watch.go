@@ -44,13 +44,13 @@ func (syncer *syncer) setupWatcher() {
 	})
 
 	if err != nil {
-		fmt.Println(err)
+		for _, errorCh := range syncer.onErrorCallbacks {
+			errorCh <- err.Error()
+		}
 	}
 
 	slices.Sort(filesToWatch)
 	slices.Compact(filesToWatch)
-
-	fmt.Printf("<%s> Watching %d files\n", syncer.watchCnf.Pattern, len(filesToWatch))
 
 	for _, path := range filesToWatch {
 		err := watcher.Add(path)
@@ -64,8 +64,6 @@ func (syncer *syncer) setupWatcher() {
 		syncer.add(path)
 	}
 
-	syncer.isRunning = true
-
 	for {
 		select {
 		case event, ok := <-watcher.Events:
@@ -75,11 +73,11 @@ func (syncer *syncer) setupWatcher() {
 			if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
 				syncer.add(event.Name)
 			}
-		case err, ok := <-watcher.Errors:
+		case _, ok := <-watcher.Errors:
 			if !ok {
 				return
 			}
-			log.Println("error:", err)
+			//log.Println("error:", err)
 		}
 	}
 

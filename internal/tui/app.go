@@ -1,11 +1,11 @@
 package tui
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/charmbracelet/glamour"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"time"
 )
 
 var (
@@ -17,27 +17,27 @@ var (
 	commandView    *tview.TextView
 	globalSettings *tview.TextView
 	syncerView     *tview.TreeView
+
+	onUpdateCh = make(chan string)
+	onErrorCh  = make(chan string)
 )
 
-func updateTitle() {
-	i := 0
-	for {
-		time.Sleep(1 * time.Second)
-		if app == nil {
-			continue
-		}
+func GetUpdateChannel() chan<- string {
+	return onUpdateCh
+}
 
-		app.QueueUpdateDraw(func() {
-			syncerView.SetTitle(fmt.Sprintf("Pod Syncer: %d", i))
-		})
-		i++
-	}
+func GetErrorChannel() chan<- string {
+	return onErrorCh
 }
 
 func DisplayApp() {
-	app = tview.NewApplication()
+	if err := app.Run(); err != nil {
+		panic(err)
+	}
+}
 
-	go updateTitle()
+func init() {
+	app = tview.NewApplication()
 
 	columns := tview.NewFlex().SetDirection(tview.FlexRow)
 
@@ -79,8 +79,29 @@ func DisplayApp() {
 		return event
 	})
 
-	if err := app.SetRoot(columns, true).Run(); err != nil {
-		panic(err)
+	app.SetRoot(columns, true)
+
+	go updateTitle()
+}
+
+func updateTitle() {
+	for {
+		select {
+		case msg1 := <-onUpdateCh:
+			app.QueueUpdateDraw(func() {
+				logs := bytes.NewBufferString(logList.GetText(false))
+				logs.WriteString(msg1)
+				logList.SetText(logs.String())
+				logList.ScrollToEnd()
+			})
+		case msg2 := <-onErrorCh:
+			app.QueueUpdateDraw(func() {
+				logs := bytes.NewBufferString(logList.GetText(false))
+				logs.WriteString(msg2)
+				logList.SetText(logs.String())
+				logList.ScrollToEnd()
+			})
+		}
 	}
 }
 
@@ -160,7 +181,7 @@ func scrollableSyncerView() *tview.TreeView {
 
 	// Erstelle ein TreeView mit der Wurzel
 	treeView := tview.NewTreeView().
-		SetRoot(root). // Setze den Root-Node
+		SetRoot(root).       // Setze den Root-Node
 		SetCurrentNode(root) // Standardmäßig fokussierter Knoten
 
 	// Layout mit einer Border
@@ -227,45 +248,9 @@ func scrollableCommandView() *tview.TextView {
 }
 
 func scrollableLogView() *tview.TextView {
-	// Kombiniere die Items in einer Zeile
-	listContent := `
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-2024-12-14 10:14:52: Syncing 2 files to pod/frontend-6cc49dfb67-vnz4k... done in 814.129202ms (✅)
-`
-
 	// Erstelle ein neues TextView
 	textView := tview.NewTextView().
-		SetText(listContent).
+		SetScrollable(true).
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignLeft)
 
