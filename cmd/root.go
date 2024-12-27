@@ -19,8 +19,7 @@ var rootCmd = &cobra.Command{
 			syncer.AddOnErrorListener(tui.GetErrorChannel())
 			syncer.StartSyncing()
 		}
-
-		tui.DisplayApp()
+		tui.DisplayApp(config)
 	},
 }
 

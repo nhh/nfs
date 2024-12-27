@@ -6,6 +6,8 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"gopkg.in/yaml.v3"
+	"nfs/internal/config"
 )
 
 var (
@@ -20,6 +22,8 @@ var (
 
 	onUpdateCh = make(chan string)
 	onErrorCh  = make(chan string)
+
+	configString = ""
 )
 
 func GetUpdateChannel() chan<- string {
@@ -30,13 +34,9 @@ func GetErrorChannel() chan<- string {
 	return onErrorCh
 }
 
-func DisplayApp() {
-	if err := app.Run(); err != nil {
-		panic(err)
-	}
-}
+func DisplayApp(config config.NfsConfig) {
+	setConfigString(config)
 
-func init() {
 	app = tview.NewApplication()
 
 	columns := tview.NewFlex().SetDirection(tview.FlexRow)
@@ -81,6 +81,12 @@ func init() {
 
 	app.SetRoot(columns, true)
 
+	if err := app.Run(); err != nil {
+		panic(err)
+	}
+}
+
+func init() {
 	go updateTitle()
 }
 
@@ -114,25 +120,7 @@ func scrollableGlobalSettingsView() *tview.TextView {
 
 	view.SetBorder(true).SetTitle("Config")
 
-	yml := `
-manifest: "v1"
-# Events are grouped every <interval> for deduplication purposes
-interval: 1000
-# Pod specific configuration
-pod:
-  namespace: "fe-nihanft"
-  selector: "app.kubernetes.io/name=frontend"
-  cwd: "/home/frontend/"
-watch:
-  - pattern: "./**/*.php"
-    excludes:
-      - "node_modules"
-    hooks:
-      - "yarn run build"
-  - pattern: "*.go"
-`
-
-	out, err := glamour.Render(fmt.Sprintf("```yml\n%s```", yml), "dark")
+	out, err := glamour.Render(fmt.Sprintf("```yml\n%s```", configString), "dark")
 
 	if err != nil {
 		panic(err)
@@ -328,4 +316,14 @@ func scrollableTextView() *tview.TextView {
 	})
 
 	return textView
+}
+
+func setConfigString(config config.NfsConfig) {
+	yamlData, err := yaml.Marshal(&config)
+
+	if err != nil {
+		panic(err)
+	}
+
+	configString = string(yamlData)
 }

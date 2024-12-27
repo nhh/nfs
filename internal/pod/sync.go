@@ -121,8 +121,9 @@ func (syncer *syncer) sync() {
 
 			cmd := fmt.Sprintf("tar cf - -T %s | kubectl exec -i -n fe-nihanft %s -- tar xf - -C %s", tmpFile.Name(), pod, syncer.podCnf.Cwd)
 
-			_, err = exec.Command("/bin/bash", "-c", cmd).Output()
+			response, err = exec.Command("/bin/bash", "-c", cmd).Output()
 			if err != nil {
+				fmt.Println(string(response))
 				fmt.Printf(" error %v (❌) \n", err)
 			}
 
