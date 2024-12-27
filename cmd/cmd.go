@@ -1,10 +1,9 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/spf13/cobra"
-	"io"
-	"os"
 	"os/exec"
 	"time"
 )
@@ -19,18 +18,22 @@ var cmdCmd = &cobra.Command{
 	Run: func(cobraCmd *cobra.Command, args []string) {
 		fmt.Println("Running command")
 
-		pr, pw := io.Pipe()
-		defer pw.Close() // Pipe Writer am Ende schließen, um Deadlocks zu vermeiden
-
 		cmd := exec.Command("/bin/bash")
 
-		cmd.Stdin = pr
-		cmd.Stdout = os.Stdout
+		stdin, _ := cmd.StdinPipe()
+		stdout, _ := cmd.StdoutPipe()
+
+		go func() {
+			buf := bufio.NewScanner(stdout)
+			for buf.Scan() {
+				fmt.Printf("Return value: %s\n", buf.Text()) // Ausgabe lesen
+			}
+		}()
 
 		go func() {
 			for {
 				time.Sleep(1 * time.Second)
-				pw.Write([]byte("echo 1\n"))
+				stdin.Write([]byte("echo 1\n"))
 			}
 		}()
 
